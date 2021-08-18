@@ -67,7 +67,7 @@ def get_pfam(uniprot_cr_tag):
 def get_arabidopsis_gene_id(uniprot_cr_tag):
     araport_list = parse_uniprot_cross_ref(uniprot_cr_tag, "Araport", [1])
     tair_list = parse_uniprot_cross_ref(uniprot_cr_tag, "TAIR", [2])
-    ensemblplants_list = parse_uniprot_cross_ref(uniprot_cr_tag, "EnsemblPlants", [-1])
+    ensemblplants_list = parse_uniprot_cross_ref(uniprot_cr_tag, "EnsemblPlants", [3])
     gene_id_list = set([cr_id for cr_list in araport_list + tair_list + ensemblplants_list for cr_id in cr_list])
     try:
         return sorted(gene_id_list)[0]
@@ -134,9 +134,12 @@ def main(file_path, output_fasta, species=None, gff_path=None):
 
             pfam = str(get_pfam(record.cross_references))
             taxid = str(record.taxonomy_id[0]).replace(" ", "_")
-            output_handle.write(">" + '|'.join([gene_name, gene_pos, strand, chromosome, pfam, taxid,
-                                                str(record.accessions[0])]) + '\n')
-            output_handle.write(record.sequence + '\n')
+            try:
+                output_handle.write(">" + '|'.join([gene_name, gene_pos, strand, chromosome, pfam, taxid,
+                                                    str(record.accessions[0])]) + '\n')
+                output_handle.write(record.sequence + '\n')
+            except TypeError:
+                print("Gene Name not found", record.gene_name, gene_pos, strand, chromosome, pfam, taxid) 
 
 
 if __name__ == '__main__':
@@ -145,6 +148,7 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--input', dest='uniprot_txt', required=True)
     parser.add_argument('-o', '--output', dest='output_fasta')
     parser.add_argument('-g', '--gff', dest='gff_path')
+    parser.add_argument('-s', '--species', dest='species')
     args = parser.parse_args()
 
     if args.output_fasta is None:
@@ -152,5 +156,5 @@ if __name__ == '__main__':
     else:
         output_path = args.output_fasta
     # print(args)
-    main(args.uniprot_txt, output_path, 'arabidopsis', args.gff_path)
+    main(args.uniprot_txt, output_path, args.species, args.gff_path)
 
